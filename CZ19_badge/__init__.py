@@ -1,7 +1,6 @@
 import rgb
 import socket
 import struct
-import re
 import wifi
 import network
 
