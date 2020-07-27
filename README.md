@@ -137,3 +137,4 @@ Terminology:
 |-------|--------|---------------|
 | The client crashes on startup | The client can not find a server | First start the server app, then start the client app |
 | The server does not respond to reconnections | The server still believes it is trying to connect to the "old" client | Restart the server |
+| The serial tty from the server closes after the tcp server has started | Global disasters, aliens, the mainframe being hacked, Campzone has become mudzone again | Re-open the serial tty |
