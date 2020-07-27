@@ -85,14 +85,55 @@ In the future there will be some unpack-libraries (e.g. for the `CZ19.display` h
 Default `port` is `1234`, assign variable to overwrite listening port.
 
 ## Demos
-Still have to add some features before I will be making demos.
+### Hello world
+For the CZ19 badge, just start the tcplib-app.
+
+On the CZ20Badge, create a new file for your `hello world` app with:
+```
+# Import your usual libraries
+import keypad
+
+# Import the cz1920_tcplib for the CZ20 badge
+import apps.cz1920_tcplib
+
+# Write the on_key handle
+def on_key(key_index, is_pressed):
+    if is_pressed: # only activate if the key is going down
+        global tcp # get the tcp variable from outside this method
+        tcp.send_int32(key_index) # send the current key pressed, as number to be displayed
+
+# Load the TCP Library, this will also initialize wifi it is not yet connected
+tcp = apps.cz1920_tcplib.CZ20_TCP_Client()
+# Give the client the address and port to connect to
+tcp.connect(host="<CZ19 Badge IP Address>", port=1234)
+
+# Add the handler to the keypad
+keypad.add_handler(on_key)
+
+# Send "Hello World" to be displayed
+tcp.send_text("Hello World!")
+```
+
+Where you replace `<CZ19 Badge IP Address>` with its IP. If you want to you can of course change the port as well, but you will have to match it with the port on the CZ19 badge.
+
+The CZ19 badge __should__ print his IP on startup, but I've noticed it had some different behaviour so it could be broken on your side as well.
+
+Finally start the CZ20 Hello world app. If the system does not seem to work, check the known issues down below
 
 ## TODO
 - [x] Create TCP Server for CZ19
-- [ ] Extract to seperate importable packages / libraries
-- [ ] Send structs over
+- [x] Extract to seperate importable packages / libraries
+- [x] Send structs over
 - [ ] Let CZ20 draw on CZ19 with direct `CZ19.display.<function>` handles
 - [ ] Let CZ19 talk back to CZ20
+- [ ] Write tutorial on how to use the structs
 
-### Known issues
-- The client crashes if there is no server available
+## Known issues
+Terminology:
+- __Client__: CZ20 Badge running the CZ20_TCP_Client software
+- __Server__: CZ19 Badge running the CZ19_TCP_Server software
+
+| Issue | Reason | Potential fix |
+|-------|--------|---------------|
+| The client crashes on startup | The client can not find a server | First start the server app, then start the client app |
+| The server does not respond to reconnections | The server still believes it is trying to connect to the "old" client | Restart the server |
