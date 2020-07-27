@@ -126,6 +126,7 @@ Finally start the CZ20 Hello world app. If the system does not seem to work, che
 - [x] Send structs over
 - [ ] Let CZ20 draw on CZ19 with direct `CZ19.display.<function>` handles
 - [ ] Let CZ19 talk back to CZ20
+- [x] Write Hello World tutorial
 - [ ] Write tutorial on how to use the structs
 
 ## Known issues
