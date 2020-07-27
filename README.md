@@ -5,7 +5,7 @@ A library to share data between the Campzone 2019 HackerZones and Campzone 2020 
 ## Usage
 ### Installation
 - Install https://badge.team/projects/cz1920_tcplib on your CZ20 badge.
-- Install on your CZ19 badge.
+- Install https://badge.team/projects/cz1920_tcplib_cz19_version/ on your CZ19 badge.
 - Get the ip-address from your CZ19 badge and set this ip address to the `server_ip` in your CZ20 badge at [the webusb website](webusb.hackz.one/settings).
 
 ### Server startup
