@@ -16,9 +16,6 @@ def announce(string):
     print(string)
 
 class CZ20_TCP_Client:
-    def __init__(self, timeout=10):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
     def connect(self, host=None, port=None):
         if host != None:
             self.host = host
@@ -28,6 +25,7 @@ class CZ20_TCP_Client:
 
         announce("TCP: Connecting to " + str(self.host) + ":" + str(self.port))
 
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
     def stop(self):
@@ -84,6 +82,7 @@ def connect_wifi():
             audio.play('/cache/system/wifi_failed.mp3', on_finished=system.launcher)
 
 def load_settings():
+    global settings
     settings = appconfig.get("tcp_client", {"server_ip": "192.168.1.4", "server_port": 1234})
     print("Server IP: " + settings["server_ip"] + " port: " + str(settings["server_port"]))
 
@@ -126,6 +125,7 @@ def clear():
         print("")
 
 def run_develop():
+    global settings
     r=0xa10000
     g=0x23a100
     b=0x0010a1
@@ -148,8 +148,8 @@ def run_develop():
     dp.flush()
 
     global tcp
-    tcp = TCP()
-    tcp.connect("192.168.1.4", 1234)
+    tcp = CZ20_TCP_Client()
+    tcp.connect(settings["server_ip"], settings["server_port"])
 
     keypad.add_handler(on_key)
 

@@ -99,13 +99,13 @@ def package_handler(p_data, descriptor):
         rgb.scrolltext(string, (187, 0, 75))
 
 
-#try:
-#    tcpServer = CZ19_TCP_Server()
-#    tcpServer.start(package_handler)
-#except Exception as e:
-#    import system, sys
-#    sys.print_exception(e)
-#    system.crashedWarning()
-#    system.sleep()
-#finally:
-#    tcpServer.close()
+try:
+    tcpServer = CZ19_TCP_Server()
+    tcpServer.start(package_handler)
+except Exception as e:
+    import system, sys
+    sys.print_exception(e)
+    system.crashedWarning()
+    #system.sleep()
+finally:
+    tcpServer.close()
