@@ -5,19 +5,41 @@ import re
 import wifi
 import network
 
-def announce(string):
-    print()
-    print("================")
-    print(string)
+DEBUG = False
+
+class _RawUnpackager:
+    def __init__(self, int32Handler=None, floatHandler=None, doubleHandler=None, stringHandler=None):
+        self.int32Handler  = int32Handler  if not int32Handler  == None else self.rawRGB
+        self.floatHandler  = floatHandler  if not floatHandler  == None else self.rawRGB
+        self.doubleHandler = doubleHandler if not doubleHandler == None else self.rawRGB
+        self.stringHandler = stringHandler if not stringHandler == None else self.rawRGB
+
+    def unpack(self, p_data, descriptor):
+        data = list(struct.unpack(descriptor, p_data))[0]
+
+        if descriptor == 'i':
+            self.int32Handler(data)
+        elif descriptor == 'f':
+            self.floatHandler(data)
+        elif descriptor == 'd':
+            self.doubleHandler(data)
+        else:
+            self.stringHandler(data.decode('utf-8'))
+
+    def rawRGB(self, data):
+        rgb.clear()
+        rgb.scrolltext(str(data), (0, 71, 150)) # I like oceanblue
 
 class CZ19_TCP_Server:
-    def __init__(self):
+    def __init__(self, rawUnpackager=None):
+        self.raw = rawUnpackager if not rawUnpackager == None else _RawUnpackager()
+
         self.open = False
         status_rgb = (81, 147, 252)
 
         rgb.clear()
         rgb.scrolltext("Starting TCP Server", status_rgb)
-        announce("Starting TCP Server")
+        self._announce("Starting TCP Server")
 
         rgb.clear()
         rgb.scrolltext("Connecting WiFi", status_rgb)
@@ -34,17 +56,21 @@ class CZ19_TCP_Server:
 
         print("Startup finished")
 
+    def _announce(self, string):
+        print()
+        print("================")
+        print(string)
 
-    def start(self, callback, port=1234):
+    def start(self, callback=None, port=1234):
         print("Opening socket")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.ip, port))
         self.sock.listen(1)
         self.open = True
+        self.callback = callback
 
         while self.open:
-            announce("TCP: Waiting for new connection")
+            self._announce("TCP: Waiting for new connection")
 
             conn, client = self.sock.accept()
 
@@ -52,13 +78,14 @@ class CZ19_TCP_Server:
 
             try:
                 while self.open:
-                    announce("TCP: Waiting for package")
+                    self._announce("TCP: Waiting for package")
 
-                    p_desc_size = conn.recv(struct.calcsize('i'))
-                    if not p_desc_size:
-                        print("TCP: Failed descriptor size response")
+                    p_meta = conn.recv(struct.calcsize('ii'))
+                    if not p_meta:
+                        print("TCP: Failed meta response")
                         break
-                    desc_size = list(struct.unpack('i', p_desc_size))[0]
+
+                    desc_size, packager = struct.unpack('ii', p_meta)
                     print("TCP: Desc size: " + str(desc_size))
 
                     p_desc = conn.recv(desc_size)
@@ -75,7 +102,7 @@ class CZ19_TCP_Server:
 
                     print("Type: " + str(type(p_data)))
 
-                    callback(p_data, desc)
+                    self.package_handler(p_data, desc, packager)
 
             finally:
                 conn.close()
@@ -84,28 +111,32 @@ class CZ19_TCP_Server:
         self.open = False
         self.sock.close()
 
-def package_handler(p_data, descriptor):
-    print("PKG: descriptor: '" + descriptor + "'")
-    print("PKG: data: '" + str(p_data) + "'")
+    def package_handler(self, p_data, descriptor, packager):
+        print("PKG: descriptor: '" + descriptor + "'")
+        print("PKG: data: '" + str(p_data) + "'")
 
-    # check if string
-    p = re.compile('^[0-9]+s$')
-    match = p.match(descriptor)
-    if match:
-        print("PKG: Received string!")
-        string = list(struct.unpack(descriptor, p_data))[0].decode('utf-8')
-        print("PKG: stringdata: " + string)
-        rgb.clear()
-        rgb.scrolltext(string, (187, 0, 75))
+        if packager == 0:
+            if self.callback == None:
+                print("PKGERROR: no callback given whilst requested to unpackage with callback")
+                return
 
+            self.callback(p_data, descriptor)
+        elif packager == 1: # Raw data (strings, integers, floats, doubles)
+            self.raw.unpack(p_data, descriptor)
 
-try:
-    tcpServer = CZ19_TCP_Server()
-    tcpServer.start(package_handler)
-except Exception as e:
-    import system, sys
-    sys.print_exception(e)
-    system.crashedWarning()
-    #system.sleep()
-finally:
-    tcpServer.close()
+        #elif packager == 2: # display library
+
+        #elif packager == 3: # RGB library
+
+if __name__ == "tcp_lib":
+    if not DEBUG:
+        try:
+            tcpServer = CZ19_TCP_Server()
+            tcpServer.start()
+        except Exception as e:
+            import system, sys
+            sys.print_exception(e)
+            system.crashedWarning()
+            #system.sleep()
+        finally:
+            tcpServer.close()

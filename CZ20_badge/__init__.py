@@ -1,21 +1,39 @@
 import wifi
 import audio
 import system
-import appconfig
 import display as dp
 import keypad
 import socket
 import struct
 
-settings = None
-tcp = None
-
-def announce(string):
-    print()
-    print("================")
-    print(string)
+# debug
+import appconfig
 
 class CZ20_TCP_Client:
+    def __init__(self):
+        self._connect_wifi()
+
+    def _announce(self, string):
+        print()
+        print("================")
+        print(string)
+
+    def _connect_wifi(self):
+        dp.drawPixel(0,0, 0x0044BB)
+        dp.flush()
+        if not wifi.status():
+            audio.play('/cache/system/wifi_connecting.mp3')
+            wifi.connect()
+
+            dp.drawPixel(1,0, 0x0044BB)
+            dp.flush()
+
+            wifi.wait()
+            if not wifi.status():
+                dp.drawLine(0,0, 1,0, 0xFF0000)
+                dp.flush()
+                audio.play('/cache/system/wifi_failed.mp3', on_finished=system.launcher)
+
     def connect(self, host=None, port=None):
         if host != None:
             self.host = host
@@ -23,26 +41,26 @@ class CZ20_TCP_Client:
         if port != None:
             self.port = port
 
-        announce("TCP: Connecting to " + str(self.host) + ":" + str(self.port))
+        self._announce("TCP: Connecting to " + str(self.host) + ":" + str(self.port))
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
 
     def stop(self):
-        announce("TCP: Stopping")
+        self._announce("TCP: Stopping")
         self.sock.close()
 
     def reconnect(self):
-        announce("TCP: Reconnecting")
+        self._announce("TCP: Reconnecting")
         self.stop()
         self.connect()
 
-    def send_data(self, data, data_descriptor):
+    def send_packaged_data(self, p_data, data_descriptor, packager=0):
         ## TODO: compact this to one single "package"
-        print("Sending package: " + data_descriptor)
+        print("TCP: Sending package: " + data_descriptor)
 
-        # first byte: size of data descriptor
-        desc_size = struct.pack('i', len(data_descriptor))
+        # first 2 bites: size of data descriptor, packaging type function
+        desc_size = struct.pack('ii', len(data_descriptor), packager)
         self.sock.sendall(desc_size)
 
         # second block: data descriptor
@@ -50,36 +68,26 @@ class CZ20_TCP_Client:
         self.sock.sendall(desc)
 
         # third block: data
+        self.sock.sendall(p_data)
+
+    def send_data(self, data, data_descriptor, packager=0):
         packed_data = struct.pack(data_descriptor, data)
-        self.sock.sendall(packed_data)
+        self.send_packaged_data(packed_data, data_descriptor, packager)
 
     def send_text(self, string):
-        self.send_data(string, str(len(string)) + 's')
+        self.send_data(string, str(len(string)) + 's', 1)
 
     def send_int32(self, i):
-        self.send_data(i, 'i')
+        self.send_data(i, 'i', 1)
 
     def send_float(self, f):
-        self.send_data(f, 'f')
+        self.send_data(f, 'f', 1)
 
     def send_double(self, d):
-        self.send_data(d, 'd')
+        self.send_data(d, 'd', 1)
 
-def connect_wifi():
-    dp.drawPixel(0,0, 0x0044BB)
-    dp.flush()
-    if not wifi.status():
-        audio.play('/cache/system/wifi_connecting.mp3')
-        wifi.connect()
-
-        dp.drawPixel(1,0, 0x0044BB)
-        dp.flush()
-
-        wifi.wait()
-        if not wifi.status():
-            dp.drawLine(0,0, 1,0, 0xFF0000)
-            dp.flush()
-            audio.play('/cache/system/wifi_failed.mp3', on_finished=system.launcher)
+settings = None
+tcp = None
 
 def load_settings():
     global settings
@@ -112,11 +120,11 @@ def on_key(k, p):
             print("noh")
 
         if x == 0 and y == 3:
-            announce("Restarting")
+            print("restarting")
             dp.drawFill(0xa15b00)
             system.start(system.currentApp())
         if x == 3 and y == 3:
-            announce("Reconnecting")
+            print("reconnecting")
             tcp.reconnect()
         #print("key:" + str(k) + " coords x:" + str(x) + " y:" + str(y))
 
@@ -124,15 +132,16 @@ def clear():
     for i in range(5):
         print("")
 
-def run_develop():
-    global settings
+if __name__ == "tcp_client":
     r=0xa10000
     g=0x23a100
     b=0x0010a1
 
     clear()
     load_settings()
-    connect_wifi()
+
+    tcp = CZ20_TCP_Client()
+    tcp.connect(settings["server_ip"], settings["server_port"])
 
     dp.drawPixel(0,0, r)
     dp.drawPixel(1,0, r)
@@ -147,15 +156,4 @@ def run_develop():
     dp.drawPixel(0,3, 0xE3A300)
     dp.flush()
 
-    global tcp
-    tcp = CZ20_TCP_Client()
-    tcp.connect(settings["server_ip"], settings["server_port"])
-
     keypad.add_handler(on_key)
-
-
-run_develop()
-#while (True):
-
-#tcp_close()
-#system.launcher()
