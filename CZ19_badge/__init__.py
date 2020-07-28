@@ -3,8 +3,11 @@ import socket
 import struct
 import wifi
 import network
+import time
 
 DEBUG = False
+IP_WAIT_DELAY_BETWEEN_TRIES_MS =  500
+MAX_IP_SECONDS_WAIT = 50
 
 class _RawUnpackager:
     def __init__(self, int32Handler=None, floatHandler=None, doubleHandler=None, stringHandler=None):
@@ -47,8 +50,19 @@ class CZ19_TCP_Server:
             wifi.connect()
 
         rgb.clear()
+        rgb.text("Getting IP" + )
         s = network.WLAN(network.STA_IF)
-        self.ip, sub, gateway, dns = s.ifconfig()
+        self.ip = list(s.ifconfig())[0]
+
+        tries = 0
+        max_tries = MAX_IP_SECONDS_WAIT * 1000 / IP_WAIT_DELAY_BETWEEN_TRIES_MS
+        while self.ip == "0.0.0.0" and tries < 100:
+            print("Wrong ip: " + self.ip + " try: " + str(tries))
+            time.sleep_ms(500)
+            self.ip = list(s.ifconfig())[0]
+            tries = tries + 1
+
+        rgb.clear()
         text = "IP: " + str(self.ip)
         print("IP: " + str(self.ip))
         rgb.scrolltext(text, status_rgb)
@@ -139,3 +153,6 @@ if __name__ == "tcp_lib":
             #system.sleep()
         finally:
             tcpServer.close()
+
+    else:
+        print("debug is online, waiting for server to be started")
