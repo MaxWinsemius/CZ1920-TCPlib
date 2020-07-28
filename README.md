@@ -116,9 +116,7 @@ tcp.send_text("Hello World!")
 
 Where you replace `<CZ19 Badge IP Address>` with its IP. If you want to you can of course change the port as well, but you will have to match it with the port on the CZ19 badge.
 
-The CZ19 badge __should__ print his IP on startup, but I've noticed it had some different behaviour so it could be broken on your side as well.
-
-Finally start the CZ20 Hello world app. If the system does not seem to work, check the known issues down below
+Start the CZ20 Hello world app. If the system does not seem to work, check the known issues down below
 
 ## TODO
 - [x] Create TCP Server for CZ19
