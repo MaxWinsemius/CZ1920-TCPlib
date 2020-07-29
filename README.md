@@ -27,7 +27,7 @@ import apps.cz1920_tcplib_cz19_version as tcpserver # On the CZ19 badge library
 ##### Starting the client / setting up a different host
 ```
 tcp_client = tcpclient.CZ20_TCP_Client()
-tcp_cleint.connect(host=<ip of your CZ19 badge>, port=None)
+tcp_client.connect(host=<ip of your CZ19 badge>, port=None)
 ```
 
 By giving any values to any of these parameters you will overwrite the previously set ones and the tcp server will connect to the new address.
