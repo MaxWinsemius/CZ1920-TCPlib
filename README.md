@@ -67,7 +67,7 @@ CZ20_TCP_Client.send_double(d)
 CZ20_TCP_Client.rgb.clear() #clears the screen such as you would do on the CZ19 badge with rgb.clear()
 ```
 
-All other methods work similarly, except for `rgb.getbrightness()` and `rgb.textwidth()`
+All other [methods](https://wiki.badge.team/Cz19#Display) work similarly, except for `rgb.getbrightness()` and `rgb.textwidth()`
 
 #### CZ19 badge
 ##### Initializing the server
