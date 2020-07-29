@@ -26,7 +26,8 @@ import apps.cz1920_tcplib_cz19_version as tcpserver # On the CZ19 badge library
 #### CZ20 badge
 ##### Starting the client / setting up a different host
 ```
-CZ20_TCP_Client.connect(host=None, port=None)
+tcp_client = tcpclient.CZ20_TCP_Client()
+tcp_cleint.connect(host=<ip of your CZ19 badge>, port=None)
 ```
 
 By giving any values to any of these parameters you will overwrite the previously set ones and the tcp server will connect to the new address.
@@ -35,68 +36,71 @@ By giving any values to any of these parameters you will overwrite the previousl
 
 ##### Stopping the client
 ```
-CZ20_TCP_Client.stop()
+tcp_client.stop()
 ```
 
 ##### Reconnecting the client
 ```
-CZ20_TCP_Client.reconnect()
+tcp_client.reconnect()
 ```
 
 Todo: allow for new host and port settings
 
 ##### Prebuild data handling
 ```
-CZ20_TCP_Client.send_text(string)
-CZ20_TCP_Client.send_int32(i)
-CZ20_TCP_Client.send_float(f)
-CZ20_TCP_Client.send_double(d)
+tcp_client.send_text(string)
+tcp_client.send_int32(i)
+tcp_client.send_float(f)
+tcp_client.send_double(d)
 ```
 
 ##### The Display library
 > This library has not been fully tested. If you encounter bugs, please report with an issue or ping me at discord (Hernivo)
+
+> The display library can be over-drawn by the RGB library. Run `tcp_client.rgb.disablecomp()` beforehand if you want to use it.
+
 ```
-CZ20_TCP_Client.display.flush() # draws buffer to the screen, such as you would do on the CZ19 badge with display.clear()
+tcp_client.display.flush() # draws buffer to the screen, such as you would do on the CZ19 badge with display.clear()
 ```
 
 Most other [methods](https://docs.badge.team/esp32-app-development/api-reference/display/) work the same way. If you want to write to a window, use the normal funcion name but with a `w` in front of it:
 ```
-display.drawPixel("myWindow", 0, 0, 0xBB004B) becomes CZ20_TCP_Client.display.wdrawPixel("myWindow", 0, 0, 0xBB004B)
+display.drawPixel("myWindow", 0, 0, 0xBB004B) becomes tcp_client.display.wdrawPixel("myWindow", 0, 0, 0xBB004B)
 ```
 
 Supported functions:
-- `display.flush([flags])`
-- `display.orientation(angle)` (note that it can not request an angle, but only write)
-- `display.getPixel(x, y)`
-- `display.drawRaw(x, y, width, height, data)`
-- `display.drawPixel(x, y, color)`
-- `display.drawFill(color)`
-- `display.drawLine(x0, x1, y0, y1, color)`
-- `display.drawRect(x, y, width, height, filled, color)`
-- `display.drawCircle(x0, y0, radius, a0, a1, fill, color)`
-- `display.drawText(x, y, text, [color], [font], [x_scale], [y_scale])` (I think this method took about 30% of the time of writing this display library)
-- `display.drawPng(x, y, [data or filename])`
-- `display.windowCreate(name, width, height)`
-- `display.windowRemove(name)`
-- `display.windowMove(name, x, y)`
-- `display.windowResize(name, width, height)`
-- `display.windowVisibility(name, [visible])` (note that I'm not sure what this function does, and it might try to return some data and fail doing so)
-- `display.windowShow(name)`
-- `display.windowHide(name)`
-- `display.windowFoxus(name)`
+- `tcp_client.display.flush([flags])`
+- `tcp_client.display.orientation(angle)` (note that it can not request an angle, but only write)
+- `tcp_client.display.getPixel(x, y)`
+- `tcp_client.display.drawRaw(x, y, width, height, data)`
+- `tcp_client.display.drawPixel(x, y, color)`
+- `tcp_client.display.drawFill(color)`
+- `tcp_client.display.drawLine(x0, x1, y0, y1, color)`
+- `tcp_client.display.drawRect(x, y, width, height, filled, color)`
+- `tcp_client.display.drawCircle(x0, y0, radius, a0, a1, fill, color)`
+- `tcp_client.display.drawText(x, y, text, [color], [font], [x_scale], [y_scale])` (I think this method took about 30% of the time of writing this display library)
+- `tcp_client.display.drawPng(x, y, [data or filename])`
+- `tcp_client.display.windowCreate(name, width, height)`
+- `tcp_client.display.windowRemove(name)`
+- `tcp_client.display.windowMove(name, x, y)`
+- `tcp_client.display.windowResize(name, width, height)`
+- `tcp_client.display.windowVisibility(name, [visible])` (note that I'm not sure what this function does, and it might try to return some data and fail doing so)
+- `tcp_client.display.windowShow(name)`
+- `tcp_client.display.windowHide(name)`
+- `tcp_client.display.windowFoxus(name)`
 
 The other functions request data from the badge, and that functionality is not yet supported.
 
 ##### The RGB library
 ```
-CZ20_TCP_Client.rgb.clear() #clears the screen such as you would do on the CZ19 badge with rgb.clear()
+tcp_client.rgb.clear() #clears the screen such as you would do on the CZ19 badge with rgb.clear()
 ```
 
 All other [methods](https://wiki.badge.team/Cz19#Display) work similarly, but `rgb.getbrightness()` and `rgb.textwidth()` have not yet been implemented.
 
 ##### Send raw data
 ```
-CZ20_TCP_Client.send_packaged_data(p_data, data_descriptor)
+tcp_client.send_packaged_data(p_data, data_descriptor)
 
 p_data: packaged data, using the python struct library, with format data_descriptor.
 data_descriptor: format of which data is packaged.
@@ -107,22 +111,32 @@ Check [structs](https://docs.python.org/3.5/library/struct.html#format-character
 #### CZ19 badge
 ##### Initializing the server
 ```
-CZ20 = tcpserver.CZ19_TCP_Server()
-CZ20.start(package_handler)
+tcp_server = tcpserver.CZ19_TCP_Server()
+tcp_server.start()
 ```
 
-The `package_handler` is a handle that is able to unpack the data coming in. The current default handler is only able to unpack strings
+If you want to add your own package handles, so that you can unpack your packages send in `tcp_client.send_packaged_data(p_data, data_descriptor)`, you can fill it as an argument to the start method:
+```
+tcp_server.start(package_handler)
+```
+
+The package handler should be defined as following:
+```
+def package_handler(packaged_data, descriptor)
+```
+
+Where you can easily decrypt the data with
+```
+data = struct.unpack(descriptor, packaged_data)
+```
+and do with it what you want.
 
 ##### Starting the server
 ```
-CZ19_TCP_Server.start(callback, port=1234)
+tcp_server.start(package_handler, port=1234)
 ```
 
-`callback` is a the handle described before, with parameters `p_data` and `descriptor`.
-`p_data` is the packaged data, to be unpackaged and `descriptor` is the descriptor of how the data is formatted, also known as the format of the struct. If you know what the descriptor is, you can unpack the data accordingly.
-
-In the future there will be some unpack-libraries (e.g. for the `CZ19.display` handles).
-
+The server handles the `display` and `rgb` libraries by itself.
 Default `port` is `1234`, assign variable to overwrite listening port.
 
 ## Demos
@@ -164,7 +178,7 @@ Start the CZ20 Hello world app. If the system does not seem to work, check the k
 - [x] Extract to seperate importable packages / libraries
 - [x] Send structs over
 - [x] Let CZ20 draw on CZ19 with direct `CZ19.rgb.<function>` handles
-- [ ] Let CZ20 draw on CZ19 with direct `CZ19.display.<function>` handles
+- [x] Let CZ20 draw on CZ19 with direct `CZ19.display.<function>` handles
 - [ ] Let CZ19 talk back to CZ20
 - [x] Write Hello World tutorial
 - [ ] Write tutorial on how to use the structs
