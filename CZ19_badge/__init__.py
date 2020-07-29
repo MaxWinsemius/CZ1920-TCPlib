@@ -1,13 +1,212 @@
-import rgb
 import socket
 import struct
 import wifi
 import network
 import time
+import rgb
+import display
 
 DEBUG = False
 IP_WAIT_DELAY_BETWEEN_TRIES_MS =  500
 MAX_IP_SECONDS_WAIT = 50
+
+class _DisplayUnpackager:
+    def unpack(self, _p_data, _desc):
+        ba = bytearray(_p_data)
+        method = struct.unpack('i', ba[:4])[0]
+        desc = _desc[1:]
+        p_data = ba[4:]
+        print("PKGDIS: method: " + str(method))
+        print("PKGDIS: desc: " + desc)
+
+        if method == 0:
+            flags = struct.unpack('i', p_data)
+            display.flush(flags)
+
+        elif method == 8:
+            angle = struct.unpack(desc, p_data)[0]
+            display.orientation(angle)
+
+        elif method == 10:
+            window, angle = struct.unpack(desc, p_data)
+            window = window.decode()
+            display.orientation(window.decode(), angle)
+
+        elif method == 13:
+            size = struct.calcsize('iiii')
+            x, y, widh, height = struct.unpack('iiii', p_data[:size])
+            data = list(struct.unpack(desc[4:], p_data[size:]))
+            display.drawRaw(x, y, width, height, data)
+
+        elif method == 14:
+            loc = desc.find('s')
+            window, x, y, width, height = struct.unpack(desc[:loc+5], p_data[:struct.calcsize(desc[:loc+5])])
+            window = window.decode()
+            data = list(struct.unpack(desc[loc+5:], p_data[:struct.calcsize(desc[:loc+5])]))
+            display.drawRaw(window, x, y, width, height, data)
+
+        elif method == 15:
+            x, y, color = struct.unpack(desc, p_data)
+            display.drawPixe(x, y, color)
+
+        elif method == 16:
+            window, x, y, color = struct.unpack(desc, p_data)
+            window = window.decode()
+            display.drawPixel(window, x, y, color)
+
+        elif method == 17:
+            color = struct.unpack(desc, p_data)[0]
+            display.drawFill(color)
+
+        elif method == 18:
+            window, color = struct.unpack(desc, p_data)[0]
+            window = window.decode()
+            display.drawFill(window, color)
+
+        elif method == 19:
+            x0, y0, x1, y1, color = struct.unpack(desc, p_data)
+            display.drawLine(x0, y0, x1, y1, color)
+
+        elif method == 20:
+            window, x0, y0, x1, y1, color = struct.unpack(desc, p_data)
+            window = window.decode()
+            display.drawLine(window, x0, y0, x1, y1, color)
+
+        elif method == 21:
+            x, y, width, height, filled, color = struct.unpack(desc, p_data)
+            display.drawRect(x, y, width, height, filled, color)
+
+        elif method == 22:
+            window, x, y, width, heght, filled, color = struct.unpack(desc, p_data)
+            window = window.decode()
+            display.drawRect(window, x, y, width, height, filled, color)
+
+        elif method == 23:
+            x0, y0, radius, a0, a1, fill, color = struct.unpack(desc, p_data)
+            display.drawCircle(x0, y0, radius, a0, a1, fill, color)
+
+        elif method == 24:
+            window, x0, y0, radius, a0, a1, fill, color = struct.unpack(desc, p_data)
+            window = window.decode()
+            display.drawCircle(window, x0, y0, radius, a0, a1, fill, color)
+
+        elif method > 24 and method < 33:
+            # what a lovely abomanation of code has this become
+            window = None
+            if method > 28:
+                method -= 4
+                loc = desc.find('s') + 1
+                window = struct.unpack(desc[:loc], p_data[:struct.calcsize(desc[:loc])])[0]
+                window = window.decode()
+                p_data = p_data[struct.calcsize(desc[:loc]):]
+                desc = desc[loc:]
+
+            loc = desc.find('s') + 1
+            x, y, text = struct.unpack(desc[:loc], p_data[:struct.calcsize(desc[:loc])])
+            text = text.decode()
+            p_data = p_data[struct.calcsize(desc[:loc]):]
+            desc = desc[loc:]
+
+            if method > 25:
+                color = struct.unpack('i', p_data[:struct.calcsize('i')])
+                p_data = p_data[struct.calcsize('i'):]
+                desc = desc[1:]
+
+                if method > 26:
+                    loc = desc.find('s') + 1
+                    font = struct.unpack(desc[:loc], p_data[:struct.calcsize(desc[:loc])])[0]
+                    font = font.decode()
+                    p_data = p_data[struct.calcsize(desc[:loc]):]
+                    desc = desc[loc:]
+
+                    if method > 27:
+                        x_scale, y_scale = struct.unpack(desc, p_data)
+                        if window == None:
+                            display.drawText(x, y, text, color, font, x_scale, y_scale)
+                        else:
+                            display.drawText(window, x, y, text, color, font, x_scale, y_scale)
+                    else:
+                        if window == None:
+                            display.drawText(x, y, text, color, font)
+                        else:
+                            display.drawText(window, x, y, text, color, font)
+                else:
+                    if window == None:
+                        display.drawText(x, y, text, color)
+                    else:
+                        display.drawText(window, x, y, text, color)
+            else:
+                if window == None:
+                    display.drawText(x, y, text)
+                else:
+                    display.drawText(window, x, y, text)
+
+        elif method == 33:
+            x, y, png = struct.unpack(desc, p_data)
+            png = png.decode()
+            display.drawPng(x, y, png)
+
+        elif method == 34:
+            window, y, png = struct.unpack(desc, p_data)
+            window = window.decode()
+            png = png.decode()
+            display.drawPng(window, x, y, png)
+
+        elif method == 35:
+            x, y = struct.unpack('ii', p_data[:struct.calcsize('ii')])
+            png = list(struct.unpack(desc[2:], p_data[struct.calcsize('ii'):]))
+            display.drawPng(x, y, png)
+
+        elif method == 36:
+            window, x, y = struct.unpack('ii', p_data[:struct.calcsize('ii')])
+            window = window.decode()
+            png = list(struct.unpack(desc[2:], p_data[struct.calcsize('ii'):]))
+            display.drawPng(window, x, y, png)
+
+        elif method == 40:
+            name, width, height = struct.unpack(desc, p_data)
+            name = name.decode()
+            display.windowCreate(name, width, height)
+
+        elif method == 41:
+            name = struct.unpack(desc, p_data)[0]
+            name = name.decode()
+            display.windowRemove(name)
+
+        elif method == 42:
+            name, width, height = struct.unpack(desc, p_data)
+            name = name.decode()
+            display.windowMove(name, width, height)
+
+        elif method == 43:
+            name, width, height = struct.unpack(desc, p_data)
+            name = name.decode()
+            display.windowResize(name, width, height)
+
+        elif method == 44:
+            name, visible = struct.unpack(desc, p_data)
+            name = name.decode()
+            display.windowVisibility(name, visible)
+
+        elif method == 45:
+            name = struct.unpack(desc, p_data)
+            name = name.decode()
+            display.windowVisibility(name)
+
+        elif method == 46:
+            name = struct.unpack(desc, p_data)
+            name = name.decode()
+            display.windowShow(name)
+
+        elif method == 47:
+            name = struct.unpack(desc, p_data)
+            name = name.decode()
+            display.windowHide(name)
+
+        elif method == 48:
+            name = struct.unpack(desc, p_data)
+            name = name.decode()
+            display.windowFocus(name)
 
 class _RGBUnpackager:
     def unpack(self, _p_data, _desc):

@@ -45,16 +45,6 @@ CZ20_TCP_Client.reconnect()
 
 Todo: allow for new host and port settings
 
-##### Send raw data
-```
-CZ20_TCP_Client.send_data(data, data_descriptor)
-
-data: packaged data, using the python struct library, with format data_descriptor.
-data_descriptor: format of which data is packaged.
-```
-
-Check [structs](https://docs.python.org/3.5/library/struct.html#format-characters).
-
 ##### Prebuild data handling
 ```
 CZ20_TCP_Client.send_text(string)
@@ -62,12 +52,57 @@ CZ20_TCP_Client.send_int32(i)
 CZ20_TCP_Client.send_float(f)
 CZ20_TCP_Client.send_double(d)
 ```
+
+##### The Display library
+> This library has not been fully tested. If you encounter bugs, please report with an issue or ping me at discord (Hernivo)
+```
+CZ20_TCP_Client.display.flush() # draws buffer to the screen, such as you would do on the CZ19 badge with display.clear()
+```
+
+Most other [methods](https://docs.badge.team/esp32-app-development/api-reference/display/) work the same way. If you want to write to a window, use the normal funcion name but with a `w` in front of it:
+```
+display.drawPixel("myWindow", 0, 0, 0xBB004B) becomes CZ20_TCP_Client.display.wdrawPixel("myWindow", 0, 0, 0xBB004B)
+```
+
+Supported functions:
+- `display.flush([flags])`
+- `display.orientation(angle)` (note that it can not request an angle, but only write)
+- `display.getPixel(x, y)`
+- `display.drawRaw(x, y, width, height, data)`
+- `display.drawPixel(x, y, color)`
+- `display.drawFill(color)`
+- `display.drawLine(x0, x1, y0, y1, color)`
+- `display.drawRect(x, y, width, height, filled, color)`
+- `display.drawCircle(x0, y0, radius, a0, a1, fill, color)`
+- `display.drawText(x, y, text, [color], [font], [x_scale], [y_scale])` (I think this method took about 30% of the time of writing this display library)
+- `display.drawPng(x, y, [data or filename])`
+- `display.windowCreate(name, width, height)`
+- `display.windowRemove(name)`
+- `display.windowMove(name, x, y)`
+- `display.windowResize(name, width, height)`
+- `display.windowVisibility(name, [visible])` (note that I'm not sure what this function does, and it might try to return some data and fail doing so)
+- `display.windowShow(name)`
+- `display.windowHide(name)`
+- `display.windowFoxus(name)`
+
+The other functions request data from the badge, and that functionality is not yet supported.
+
 ##### The RGB library
 ```
 CZ20_TCP_Client.rgb.clear() #clears the screen such as you would do on the CZ19 badge with rgb.clear()
 ```
 
-All other [methods](https://wiki.badge.team/Cz19#Display) work similarly, except for `rgb.getbrightness()` and `rgb.textwidth()`
+All other [methods](https://wiki.badge.team/Cz19#Display) work similarly, but `rgb.getbrightness()` and `rgb.textwidth()` have not yet been implemented.
+
+##### Send raw data
+```
+CZ20_TCP_Client.send_packaged_data(p_data, data_descriptor)
+
+p_data: packaged data, using the python struct library, with format data_descriptor.
+data_descriptor: format of which data is packaged.
+```
+
+Check [structs](https://docs.python.org/3.5/library/struct.html#format-characters).
 
 #### CZ19 badge
 ##### Initializing the server

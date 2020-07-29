@@ -10,6 +10,295 @@ import touchpads
 import keypad
 import display as dp
 
+class _DisplayPackager:
+    def __init__(self, tcp):
+        self.tcp = tcp
+
+    def flush(self, flags=None):
+        desc = 'ii'
+        p_data = struct.pack(desc, 0, flags)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def size(self):
+        # TODO: server can not respond yet
+        method = 1
+        print("DISPKG: get size function not yet implemented")
+        return
+
+    def wsize(self, window):
+        # TODO: server can not respond yet
+        method = 2
+        print("DISPKG: get wsize function not yet implemented")
+        return
+
+    def width(self):
+        # TODO: server can not respond yet
+        method = 3
+        print("DISPKG: get width function not yet implemented")
+        return
+
+    def wwidth(self, window):
+        # TODO: server can not respond yet
+        method = 4
+        print("DISPKG: get wwidth function not yet implemented")
+        return
+
+    def height(self):
+        # TODO: server can not respond yet
+        method = 5
+        print("DISPKG: get height function not yet implemented")
+        return
+
+    def wheight(self, window):
+        # TODO: server can not respond yet
+        method = 6
+        print("DISPKG: get wheight function not yet implemented")
+        return
+
+    def orientation(self, angle=None):
+        if angle == None:
+            # TODO: server can not respond yet
+            method = 7
+            print("DISPLG: get orientation function not yet implemented")
+        else:
+            desc = "ii"
+            method = 8
+            p_data = struct.pack(desc, method, angle)
+            self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def worientation(self, window, angle=None):
+        if angle == None:
+            # TODO: server can not respond yet
+            method = 9
+            print("DISPLG: get worientation function not yet implemented")
+        else:
+            desc = "i" + str(len(window)) + "si"
+            method = 10
+            p_data = struct.pack(desc, method, window, angle)
+            self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def getPixel(self, x, y):
+        # TODO: server can not respond yet
+        method = 11
+        print("DISPKG: getPixel function not yet implemented")
+        return
+
+    def wgetPixel(self, window, x, y):
+        # TODO: server can not respond yet
+        method = 12
+        print("DISPKG: wgetPixel function not yet implemented")
+        return
+
+    def drawRaw(self, x, y, width, height, data):
+        desc = "iiiii" + str(len(data)) + "i"
+        method = 13
+        p_data = struct.pack("iiiii", method, x, y, width, height)
+        for pixel in data:
+            p_data.extend(struct.pack("i", pixel))
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def wdrawRaw(self, window, x, y, width, height, data):
+        desc = "i" + str(len(window)) + "siiii" + str(len(data)) + "i"
+        method = 14
+        p_data = struct.pack("i" + str(len(window)) + "siiii", method, window, x, y, width, height)
+        for pixel in data:
+            p_data.extend(struct.pack("i", pixel))
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def drawPixel(self, x, y, color):
+        desc = 'iiii'
+        method = 15
+        p_data = struct.pack(desc, method, x, y, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def wdrawPixel(self, window, x, y, color):
+        desc = 'i' + str(len(window)) + 'siii'
+        method = 16
+        p_data = struct.pack(desc, method, window, x, y, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def drawFill(self, color):
+        desc = 'ii'
+        method = 17
+        p_data = struct.pack(desc, method, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def wdrawFill(self, window, color):
+        desc = 'i' + str(len(window)) + 'si'
+        method = 18
+        p_data = struct.pack(desc, method, window, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def drawLine(self, x0, y0, x1, y1, color):
+        desc = 'iiiiii'
+        method = 19
+        p_data = struct.pack(desc, method, x0, y0, x1, y1, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def wdrawLine(self, window, x0, y0, x1, y1, color):
+        desc = 'i' + str(len(window)) + 'siiiii'
+        method = 20
+        p_data = struct.pack(desc, method, window, x0, y0, x1, y1, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def drawRect(self, x, y, width, height, filled, color):
+        desc = 'iiiii?i'
+        method = 21
+        p_data = struct.pack(desc, method, x, y, width, height, filled, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def wdrawRect(self, window, x, y, width, height, filled, color):
+        desc = 'i' + str(len(window)) + 'siiii?i'
+        method = 22
+        p_data = struct.pack(desc, method, window, x, y, width, height, filled, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def drawCircle(self, x0, y0, radius, a0, a1, fill, color):
+        desc = 'iiiiii?i'
+        method = 23
+        p_data = struct.pack(desc, method, x0, y0, radius, a0, a1, fill, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def wdrawCircle(self, window, x0, y0, radius, a0, a1, fill, color):
+        desc = 'i' + str(len(window)) + 'siiiii?i'
+        method = 24
+        p_data = struct.pack(desc, method, window, x0, y0, radius, a0, a1, fill, color)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def drawText(self, x, y, text, color=None, font=None, x_scale=None, y_scale=None, window=None):
+        _window_desc = str(len(window)) + "s" if not window == None else ""
+        _desc = 'i' + _window_desc + 'ii' + str(len(text)) + 's'
+        desc = _desc
+        p_data = bytearray()
+        method = 25
+        if not color == None:
+            desc += 'i'
+            p_data.extend(struct.pack('i', color))
+            method = 26
+            if not font == None:
+                size = str(len(font))
+                desc += size + 's'
+                p_data.extend(struct.pack(size + 's', font))
+                method = 27
+                if (not x_scale == None) and (not y_scale == None):
+                    desc += 'ii'
+                    p_data.extend(struct.pack('ii', x_scale, y_scale))
+                    method = 28
+        _p_data = bytearray()
+        if window == None:
+            _p_data = bytearray(struct.pack(_desc, method, x, y, text))
+        else:
+            method += 4
+            _p_data = bytearray(struct.pack(_desc, method, window, x, y, text))
+        _p_data.extend(p_data)
+        self.tcp.send_packaged_data(_p_data, desc, packager=2)
+
+    def wdrawText(self, window, x, y, text, color=None, font=None, x_scale=None, y_scale=None):
+        self.drawText(x, y, text, color=color, font=font, x_scale=x_scale, y_scale=y_scale, window=window)
+
+    def drawPng(self, x, y, png, window=None):
+        # PNG can either be a string (filename) or data
+        _window_desc = str(len(window)) + "s" if not window == None else ""
+        desc = 'i' + _window_desc + 'ii' + str(len(png))
+        p_data = bytearray()
+        if isinstance(png, str):
+            desc += 's'
+            if window == None:
+                p_data.extend(bytearray(struct.pack(desc, 33, x, y, png)))
+            else:
+                p_data.extend(bytearray(struct.pack(desc, 34, window, x, y, png)))
+        else:
+            if window == None:
+                p_data.extend(bytearray(struct.pack('iii', 35, x, y)))
+            else:
+                p_data.extend(bytearray(struct.pack('i' + _window_desc + 'ii', 36, window, x, y)))
+            desc += 'i'
+            for pixel in data:
+                p_data.extend(bytearray(struct.pack('i', pixel)))
+
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def getTextWidth(self, text, font=None):
+        # TODO: server can not respond yet
+        method = 37
+        print("DISPKG: getTextWidth funciton not yet implemented (maybe your device can do it by himself?)")
+        return
+
+    def getTextHeight(self, text, font=None):
+        # TODO: server can not respond yet
+        method = 38
+        print("DISPKG: getTextHeight funciton not yet implemented (maybe your device can do it by himself?)")
+        return
+
+    def pngInfo(self, png):
+        # TODO: server can not respond yet
+        method = 39
+        print("DISPKG: pngInfo funciton not yet implemented (maybe your device can do it by himself?)")
+        return
+
+    def windowCreate(self, name, width, height):
+        desc = 'i' + str(len(name)) + 'sii'
+        method = 40
+        p_data = struct.pack(desc, method, name, width, height)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def windowRemove(self, name):
+        desc = 'i' + str(len(name)) + 's'
+        method = 41
+        p_data = struct.pack(desc, method, name)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def windowMove(self, name, width, height):
+        desc = 'i' + str(len(name)) + 'sii'
+        method = 42
+        p_data = struct.pack(desc, method, name, width, height)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def windowResize(self, name, width, height):
+        desc = 'i' + str(len(name)) + 'sii'
+        method = 43
+        p_data = struct.pack(desc, method, name, width, height)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def windowVisibility(self, name, visible=False):
+        if visible:
+            desc = 'i' + str(len(name)) + 's?'
+            method = 44
+            p_data = struct.pack(desc, method, name, visible)
+            self.tcp.send_packaged_data(p_data, desc, packager=2)
+        else:
+            desc = 'i' + str(len(name)) + 's'
+            method = 45
+            p_data = struct.pack(desc, method, name)
+            self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def windowShow(self, name):
+        desc = 'i' + str(len(name)) + 's'
+        method = 46
+        p_data = struct.pack(desc, method, name)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def windowHide(self, name):
+        desc = 'i' + str(len(name)) + 's'
+        method = 47
+        p_data = struct.pack(desc, method, name)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def windowFocus(self, name):
+        desc = 'i' + str(len(name)) + 's'
+        method = 48
+        p_data = struct.pack(desc, method, name)
+        self.tcp.send_packaged_data(p_data, desc, packager=2)
+
+    def windowList(self):
+        # TODO: server can not respond yet
+        print("DISPKG: windowList funciton not yet implemented")
+        return
+        desc = 'i'
+        method = 49
+        p_data = struct.pack(desc, method)
+        #self.tcp.send_packaged_data(p_data, desc, packager=2)
+
 class _RGBPackager:
     def __init__(self, tcp):
         self.tcp = tcp
@@ -58,7 +347,6 @@ class _RGBPackager:
         p_data = bytearray(struct.pack("iiiii", 8, xyt[0], xyt[1], wht[0], wht[1]))
         for pixel in data:
             p_data.extend(bytearray(struct.pack('i', pixel)))
-        print(p_data)
         self.tcp.send_packaged_data(p_data, desc, packager=3)
 
     def gif(self, data, xyt, wht, frames):
@@ -99,6 +387,7 @@ class CZ20_TCP_Client:
     def __init__(self):
         self._connect_wifi()
         self.rgb = _RGBPackager(self)
+        self.display = _DisplayPackager(self)
 
     def _announce(self, string):
         print()
@@ -137,10 +426,10 @@ class CZ20_TCP_Client:
         self._announce("TCP: Stopping")
         self.sock.close()
 
-    def reconnect(self):
+    def reconnect(self, host=None, port=None):
         self._announce("TCP: Reconnecting")
         self.stop()
-        self.connect()
+        self.connect(host=host, port=port)
 
     def send_packaged_data(self, p_data, data_descriptor, packager=0):
         ## TODO: compact this to one single "package"
