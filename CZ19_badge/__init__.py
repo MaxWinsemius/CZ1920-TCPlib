@@ -9,6 +9,82 @@ DEBUG = False
 IP_WAIT_DELAY_BETWEEN_TRIES_MS =  500
 MAX_IP_SECONDS_WAIT = 50
 
+class _RGBUnpackager:
+    def unpack(self, _p_data, _desc):
+        ba = bytearray(_p_data)
+        method = struct.unpack('i', ba[:4])[0]
+        p_data = ba[4:]
+        print("PKGRGB: method: " + str(method))
+
+        desc = _desc[1:]
+        print("PKGRGB: desc: " + desc)
+
+        if method == 0:
+            rgb.clear()
+
+        elif method == 1:
+            (r, g, b) = struct.unpack('iii', p_data)
+            rgb.background((100,100,100))
+
+        elif method == 2:
+            # TODO: can not respond yet
+            # rgb.getbrightness()
+            pass
+
+        elif method == 3:
+            brightness = struct.unpack('i', p_data)[0]
+            rgb.setbrightness(brightness)
+
+        elif method == 4:
+            framerate = struct.unpack('i', p_data)[0]
+            rgb.framerate(framerate)
+
+        elif method == 5:
+            (r,g,b,x,y) = struct.unpack('iiiii', p_data)
+            rgb.pixel((r,g,b),(x,y))
+
+        elif method == 6:
+            (string, r, g, b, x, y) = struct.unpack(desc, p_data)
+            # default (x,y) = (0,0)
+            rgb.text(string, (r,g,b), (x,y))
+
+        elif method == 7:
+            (string, r, g, b, x, y, width) = struct.unpack(desc, p_data)
+            # default (x,y) = (0,0)
+            # default width = whole screen == 32
+            rgb.scrolltext(string, (r,g,b), (x,y), width)
+
+        elif method == 8:
+            size = struct.calcsize('iiii')
+            (x,y,w,h) = struct.unpack('iiii', p_data[0:size])
+            data = list(struct.unpack(desc[4:], p_data[size:]))
+            rgb.image(data, (x,y), (w,h))
+
+        elif method == 9:
+            size = struct.calcsize('iiiii')
+            (x,y,w,h, frames) = struct.unpack('iiiii', p_data[0:size])
+            data = list(struct.unpack(desc[5:], p_data[size:]))
+            rgb.gif(data, (x,y), (w,h), frames)
+
+        elif method == 10:
+            font = struct.unpack(desc, p_data)[0]
+            rgb.setfont(font)
+
+        elif method == 11:
+            # TODO: can not respond yet
+            # rgb.textwidht(text)
+            pass
+
+        elif method == 12:
+            rgb.disablecomp()
+
+        elif method == 13:
+            rgb.enablecomp()
+
+        elif method == 14:
+            data = list(struct.unpack(desc, p_data))
+            rgb.frame(data)
+
 class _RawUnpackager:
     def __init__(self, int32Handler=None, floatHandler=None, doubleHandler=None, stringHandler=None):
         self.int32Handler  = int32Handler  if not int32Handler  == None else self.rawRGB
@@ -34,7 +110,9 @@ class _RawUnpackager:
 
 class CZ19_TCP_Server:
     def __init__(self, rawUnpackager=None):
+        rgb.setfont(rgb.FONT_6x3)
         self.raw = rawUnpackager if not rawUnpackager == None else _RawUnpackager()
+        self.rgb_unpack = _RGBUnpackager()
 
         self.open = False
         status_rgb = (81, 147, 252)
@@ -50,15 +128,16 @@ class CZ19_TCP_Server:
             wifi.connect()
 
         rgb.clear()
-        rgb.text("Getting IP" + )
+        rgb.text("Get IP " + str(MAX_IP_SECONDS_WAIT))
         s = network.WLAN(network.STA_IF)
         self.ip = list(s.ifconfig())[0]
 
         tries = 0
         max_tries = MAX_IP_SECONDS_WAIT * 1000 / IP_WAIT_DELAY_BETWEEN_TRIES_MS
-        while self.ip == "0.0.0.0" and tries < 100:
+        while self.ip == "0.0.0.0" and tries < max_tries:
             print("Wrong ip: " + self.ip + " try: " + str(tries))
-            time.sleep_ms(500)
+            time.sleep_ms(IP_WAIT_DELAY_BETWEEN_TRIES_MS)
+            rgb.text("Get IP " + str(MAX_IP_SECONDS_WAIT - int(1000 / IP_WAIT_DELAY_BETWEEN_TRIES_MS * tries)))
             self.ip = list(s.ifconfig())[0]
             tries = tries + 1
 
@@ -67,6 +146,7 @@ class CZ19_TCP_Server:
         print("IP: " + str(self.ip))
         rgb.scrolltext(text, status_rgb)
 
+        rgb.setfont(rgb.FONT_7x5)
         print("Startup finished")
 
     def _announce(self, string):
@@ -105,15 +185,14 @@ class CZ19_TCP_Server:
                     if not p_desc:
                         print("TCP: Failed descriptor size")
                         break
-                    desc = list(struct.unpack(str(desc_size) + 's', p_desc))[0].decode('utf-8')
+                    encoded_desc = struct.unpack(str(desc_size) + 's', p_desc)
+                    desc = list(encoded_desc)[0].decode('utf-8')
                     print("TCP: Desc: " + str(desc))
 
                     p_data = conn.recv(struct.calcsize(desc))
                     if not p_data:
                         print("TCP: Failed data")
                         break
-
-                    print("Type: " + str(type(p_data)))
 
                     self.package_handler(p_data, desc, packager)
 
@@ -125,8 +204,8 @@ class CZ19_TCP_Server:
         self.sock.close()
 
     def package_handler(self, p_data, descriptor, packager):
-        print("PKG: descriptor: '" + descriptor + "'")
-        print("PKG: data: '" + str(p_data) + "'")
+        print("PKG: descriptor: " + descriptor + "'")
+        #print("PKG: data: '" + str(p_data) + "'")
 
         if packager == 0:
             if self.callback == None:
@@ -139,7 +218,8 @@ class CZ19_TCP_Server:
 
         #elif packager == 2: # display library
 
-        #elif packager == 3: # RGB library
+        elif packager == 3: # RGB library
+            self.rgb_unpack.unpack(p_data, descriptor)
 
 if __name__ == "tcp_lib":
     if not DEBUG:

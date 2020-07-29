@@ -62,6 +62,12 @@ CZ20_TCP_Client.send_int32(i)
 CZ20_TCP_Client.send_float(f)
 CZ20_TCP_Client.send_double(d)
 ```
+##### The RGB library
+```
+CZ20_TCP_Client.rgb.clear() #clears the screen such as you would do on the CZ19 badge with rgb.clear()
+```
+
+All other methods work similarly, except for `rgb.getbrightness()` and `rgb.textwidth()`
 
 #### CZ19 badge
 ##### Initializing the server
@@ -122,10 +128,12 @@ Start the CZ20 Hello world app. If the system does not seem to work, check the k
 - [x] Create TCP Server for CZ19
 - [x] Extract to seperate importable packages / libraries
 - [x] Send structs over
+- [x] Let CZ20 draw on CZ19 with direct `CZ19.rgb.<function>` handles
 - [ ] Let CZ20 draw on CZ19 with direct `CZ19.display.<function>` handles
 - [ ] Let CZ19 talk back to CZ20
 - [x] Write Hello World tutorial
 - [ ] Write tutorial on how to use the structs
+- [ ] Make the rgb and display library robust (throw correct errors when the wrong data is given)
 
 ## Known issues
 Terminology:
@@ -136,4 +144,4 @@ Terminology:
 |-------|--------|---------------|
 | The client crashes on startup | The client can not find a server | First start the server app, then start the client app |
 | The server does not respond to reconnections | The server still believes it is trying to connect to the "old" client | Restart the server |
-| The serial tty from the server closes after the tcp server has started | Global disasters, aliens, the mainframe being hacked, Campzone has become mudzone again | Re-open the serial tty |
+| The serial tty from the server closes when waiting for IP | Global disasters, aliens, the mainframe being hacked, Campzone has become mudzone again (probably because of a time.sleep_ms call) | Re-open the serial tty |
